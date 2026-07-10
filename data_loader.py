@@ -369,8 +369,26 @@ def sync_database(con):
 
 @st.cache_resource
 def get_connection():
-    """Create and cache the in-memory DuckDB connection."""
-    return duckdb.connect(":memory:")
+    """Create and cache the MotherDuck database connection."""
+    if "motherduck" not in st.secrets:
+        raise RuntimeError(
+            "Missing [motherduck] section in Streamlit secrets configuration. "
+            "Please ensure .streamlit/secrets.toml contains the [motherduck] section."
+        )
+    
+    token = st.secrets["motherduck"].get("token")
+    database = st.secrets["motherduck"].get("database")
+    
+    if not token or not token.strip():
+        raise RuntimeError(
+            "Missing 'token' key in the [motherduck] section of Streamlit secrets."
+        )
+    if not database or not database.strip() or database == "YOUR DATBASE HERE":
+        raise RuntimeError(
+            "Missing, empty, or placeholder 'database' key in the [motherduck] section of Streamlit secrets."
+        )
+        
+    return duckdb.connect(f"md:{database}?motherduck_token={token}")
 
 
 # ---------------------------------------------------------------------------
@@ -379,11 +397,21 @@ def get_connection():
 def get_db():
     """
     Return (duckdb.Connection, fts_available).
-    Automatically runs the sync mechanism to keep the database updated.
+    Returns the MotherDuck connection and checks if FTS is available.
     """
     con = get_connection()
-    sync_database(con)
-    return con, st.session_state.get("fts_available", False)
+    
+    fts_available = False
+    try:
+        # Check if FTS index was built by checking existence of fts_main_entries tables
+        res = con.execute(
+            "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'fts_main_entries'"
+        ).fetchone()
+        fts_available = res[0] > 0 if res else False
+    except Exception:
+        fts_available = False
+        
+    return con, fts_available
 
 
 def query_entries(
