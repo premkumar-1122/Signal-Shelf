@@ -1,0 +1,19 @@
+# Private resource database
+resource_database.jsonl
+*.jsonl.bak
+Resources/resource_database.jsonl
+Resources/resource_database.jsonl.bak
+
+# Python cache & virtual environment
+__pycache__/
+*.pyc
+.venv/
+env/
+.env
+
+# Streamlit config/secrets
+.streamlit/secrets.toml
+
+# OS/System files
+.DS_Store
+Thumbs.db
