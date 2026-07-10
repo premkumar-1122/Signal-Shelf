@@ -20,8 +20,12 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ─── Auto-refresh: poll JSONL mtime every 5 seconds ──────────────────────
-st_autorefresh(interval=5000, limit=None, key="jsonl_watcher")
+# ─── Auto-refresh Config (Optional) ──────────────────────────────────────
+if "auto_refresh" not in st.session_state:
+    st.session_state["auto_refresh"] = False
+
+if st.session_state["auto_refresh"]:
+    st_autorefresh(interval=30000, limit=None, key="jsonl_watcher")
 
 # ─── Inject CSS ──────────────────────────────────────────────────────────
 inject_css()
@@ -208,6 +212,14 @@ with st.sidebar:
         ],
         key="sort_by",
         label_visibility="collapsed",
+    )
+
+    st.markdown("---")
+    st.markdown("### Settings")
+    st.checkbox(
+        "Enable auto-refresh",
+        key="auto_refresh",
+        help="Automatically refresh the dashboard every 30 seconds to fetch updates from the database."
     )
 
 # ─── Normalize date_range/single_date for the query ──────────────────────
