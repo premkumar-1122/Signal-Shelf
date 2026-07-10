@@ -18,8 +18,7 @@ A Streamlit + DuckDB dashboard for browsing curated, actionable AI newsletter in
 
 ## Screenshots
 
-![Dashboard view](docs/screenshot-dashboard.png)
-*Note: Replace this placeholder image with your own screenshot in a `docs/` folder.*
+![Dashboard view](screenshot_dashboard.png)
 
 ---
 
