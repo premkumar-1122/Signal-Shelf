@@ -388,7 +388,8 @@ def get_connection():
             "Missing, empty, or placeholder 'database' key in the [motherduck] section of Streamlit secrets."
         )
         
-    return duckdb.connect(f"md:{database}?motherduck_token={token}")
+    os.environ["motherduck_token"] = token
+    return duckdb.connect(f"md:{database}")
 
 
 # ---------------------------------------------------------------------------

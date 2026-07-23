@@ -3,6 +3,7 @@ resource_database.jsonl
 *.jsonl.bak
 Resources/resource_database.jsonl
 Resources/resource_database.jsonl.bak
+Resources/
 
 # Python cache & virtual environment
 __pycache__/

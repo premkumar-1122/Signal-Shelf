@@ -128,7 +128,8 @@ def main():
             raise ValueError("Please configure a valid database name in secrets.toml before running the sync script.")
             
         print(f"Connecting to MotherDuck database: '{database}'...")
-        con = duckdb.connect(f"md:{database}?motherduck_token={token}")
+        os.environ["motherduck_token"] = token
+        con = duckdb.connect(f"md:{database}")
         
         # Read local JSONL data
         if not JSONL_PATH.exists():
