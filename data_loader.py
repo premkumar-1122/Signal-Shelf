@@ -409,21 +409,31 @@ def get_connection():
 def get_db():
     """
     Return (duckdb.Connection, fts_available).
-    Ensure the entries table is populated from JSONL, then check if FTS is available.
+    Use remote MotherDuck if available (data synced via sync_to_motherduck.py).
+    Fall back to local DuckDB populated from JSONL when MotherDuck is unreachable.
     """
     con = get_connection()
-    sync_database(con)
-    
+
+    # Only sync from JSONL if the entries table is missing or empty
+    table_has_data = False
+    try:
+        count = con.execute("SELECT COUNT(*) FROM entries").fetchone()[0]
+        table_has_data = count > 0
+    except Exception:
+        pass
+
+    if not table_has_data:
+        sync_database(con)
+
     fts_available = False
     try:
-        # Check if FTS index was built by checking existence of fts_main_entries tables
         res = con.execute(
             "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'fts_main_entries'"
         ).fetchone()
         fts_available = res[0] > 0 if res else False
     except Exception:
         fts_available = False
-        
+
     return con, fts_available
 
 
