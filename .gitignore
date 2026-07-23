@@ -1,9 +1,7 @@
-# Private resource database
-resource_database.jsonl
-*.jsonl.bak
-Resources/resource_database.jsonl
+# Private resource database (generated files)
+/resource_database.jsonl
 Resources/resource_database.jsonl.bak
-Resources/
+Resources/raw_resource.csv
 
 # Python cache & virtual environment
 __pycache__/
