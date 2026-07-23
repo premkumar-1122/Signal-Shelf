@@ -367,29 +367,40 @@ def sync_database(con):
         st.session_state["fts_available"] = fts_available
 
 
+LOCAL_DB_PATH = Path(__file__).parent / "local_cache.duckdb"
+
+
+def _connect_motherduck(token: str, database: str) -> duckdb.DuckDBPyConnection:
+    """Attempt a MotherDuck remote connection."""
+    os.environ["motherduck_token"] = token
+    try:
+        con = duckdb.connect()
+        con.execute("INSTALL motherduck")
+        con.execute("LOAD motherduck")
+    except Exception:
+        pass  # extension may already be available
+    return duckdb.connect(f"md:{database}")
+
+
+def _connect_local() -> duckdb.DuckDBPyConnection:
+    """Fall back to a persistent local DuckDB file."""
+    logger.info("Falling back to local DuckDB database.")
+    return duckdb.connect(str(LOCAL_DB_PATH))
+
+
 @st.cache_resource
 def get_connection():
-    """Create and cache the MotherDuck database connection."""
-    if "motherduck" not in st.secrets:
-        raise RuntimeError(
-            "Missing [motherduck] section in Streamlit secrets configuration. "
-            "Please ensure .streamlit/secrets.toml contains the [motherduck] section."
-        )
-    
-    token = st.secrets["motherduck"].get("token")
-    database = st.secrets["motherduck"].get("database")
-    
-    if not token or not token.strip():
-        raise RuntimeError(
-            "Missing 'token' key in the [motherduck] section of Streamlit secrets."
-        )
-    if not database or not database.strip() or database == "YOUR DATBASE HERE":
-        raise RuntimeError(
-            "Missing, empty, or placeholder 'database' key in the [motherduck] section of Streamlit secrets."
-        )
-        
-    os.environ["motherduck_token"] = token
-    return duckdb.connect(f"md:{database}")
+    """Create and cache a database connection — MotherDuck remote, or local fallback."""
+    token = st.secrets.get("motherduck", {}).get("token")
+    database = st.secrets.get("motherduck", {}).get("database")
+
+    if token and token.strip() and database and database.strip() and database != "YOUR DATBASE HERE":
+        try:
+            return _connect_motherduck(token, database)
+        except Exception as e:
+            logger.warning(f"MotherDuck connection failed: {e}. Falling back to local DB.")
+
+    return _connect_local()
 
 
 # ---------------------------------------------------------------------------
