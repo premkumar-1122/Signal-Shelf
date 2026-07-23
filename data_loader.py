@@ -371,15 +371,14 @@ LOCAL_DB_PATH = Path(__file__).parent / "local_cache.duckdb"
 
 
 def _connect_motherduck(token: str, database: str) -> duckdb.DuckDBPyConnection:
-    """Attempt a MotherDuck remote connection."""
+    """Attempt a MotherDuck remote connection via ATTACH on a single connection."""
     os.environ["motherduck_token"] = token
-    try:
-        con = duckdb.connect()
-        con.execute("INSTALL motherduck")
-        con.execute("LOAD motherduck")
-    except Exception:
-        pass  # extension may already be available
-    return duckdb.connect(f"md:{database}")
+    con = duckdb.connect(':memory:')
+    con.execute("INSTALL motherduck")
+    con.execute("LOAD motherduck")
+    con.execute(f"ATTACH 'md:{database}' AS motherduck_db (TYPE motherduck)")
+    con.execute("USE motherduck_db")
+    return con
 
 
 def _connect_local() -> duckdb.DuckDBPyConnection:
@@ -391,14 +390,19 @@ def _connect_local() -> duckdb.DuckDBPyConnection:
 @st.cache_resource
 def get_connection():
     """Create and cache a database connection — MotherDuck remote, or local fallback."""
+    st.session_state.pop("motherduck_connection_error", None)
     token = st.secrets.get("motherduck", {}).get("token")
     database = st.secrets.get("motherduck", {}).get("database")
 
     if token and token.strip() and database and database.strip() and database != "YOUR DATBASE HERE":
         try:
-            return _connect_motherduck(token, database)
+            con = _connect_motherduck(token, database)
+            logger.info("Connected to MotherDuck successfully.")
+            return con
         except Exception as e:
-            logger.warning(f"MotherDuck connection failed: {e}. Falling back to local DB.")
+            msg = f"MotherDuck connection failed: {e}. Using local database."
+            logger.warning(msg)
+            st.session_state["motherduck_connection_error"] = msg
 
     return _connect_local()
 

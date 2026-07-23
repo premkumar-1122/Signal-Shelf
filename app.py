@@ -80,6 +80,10 @@ search_term = st.text_input(
 with st.sidebar:
     st.markdown("### Active Controls")
 
+    # Surface a warning if MotherDuck connection failed
+    if st.session_state.get("motherduck_connection_error"):
+        st.warning(st.session_state["motherduck_connection_error"])
+
     # Surface any ingestion errors detected during JSONL loading
     if st.session_state.get("ingestion_errors"):
         with st.expander("Ingestion Warnings", expanded=True):
