@@ -409,9 +409,10 @@ def get_connection():
 def get_db():
     """
     Return (duckdb.Connection, fts_available).
-    Returns the MotherDuck connection and checks if FTS is available.
+    Ensure the entries table is populated from JSONL, then check if FTS is available.
     """
     con = get_connection()
+    sync_database(con)
     
     fts_available = False
     try:
